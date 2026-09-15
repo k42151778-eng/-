@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="KHALIL ACCOUNTING — منظومة محاسبية متكاملة لإدارة الفواتير والزبائن والشرائح">
+  <title>KHALIL ACCOUNTING</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ================= 1. AUTH SCREEN ================= -->
+<div id="screen-auth" style="display:none;">
+  <div class="auth-left">
+    <img src="assets/img/logo.jpg" alt="Logo">
+    <h2>KHALIL ACCOUNTING</h2>
+    <p>منظومة محاسبية متكاملة لإدارة الفواتير والزبائن والشرائح</p>
+    <div class="quote" id="auth-left-quote">إدارة مالية ذكية تبدأ من هنا</div>
+  </div>
+
+  <div class="auth-right">
+    <!-- Login -->
+    <div class="auth-card" id="box-login">
+      <h1>تسجيل الدخول</h1>
+      <p class="sub">أدخل بياناتك للوصول إلى لوحة التحكم</p>
+      <div id="login-users-hint" style="display:none;background:rgba(27,42,74,0.05);border-right:3px solid var(--navy);padding:10px 12px;border-radius:8px;font-size:0.8rem;margin-bottom:16px;"></div>
+
+      <form id="form-login" novalidate onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">البريد الإلكتروني أو رقم الهاتف</label>
+          <input type="text" class="form-control" id="login-email" placeholder="أدخل بريدك أو رقم هاتفك" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">كلمة المرور</label>
+          <div style="position:relative;">
+            <input type="password" class="form-control" id="login-pass" placeholder="كلمة المرور" style="padding-left:40px;" required>
+            <button type="button" onclick="togglePass('login-pass')" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-3);">👁️</button>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer;">
+            <input type="checkbox" id="login-remember" checked> تذكرني
+          </label>
+          <a onclick="openResetModal()" style="font-size:0.85rem;color:var(--gold);font-weight:700;cursor:pointer;text-decoration:underline;">🔑 نسيت كلمة المرور؟</a>
+        </div>
+        <button type="submit" class="btn btn-navy" style="width:100%;padding:13px;font-weight:800;font-size:1rem;">دخول →</button>
+      </form>
+      <div class="auth-toggle-link">ليس لديك حساب؟ <a onclick="showAuthBox('register')">إنشاء حساب جديد</a></div>
+    </div>
+
+    <!-- Register -->
+    <div class="auth-card" id="box-register" style="display:none;">
+      <h1>إنشاء حساب جديد</h1>
+      <p class="sub">سجّل حسابك للحصول على لوحة تحكم خاصة ونظيفة</p>
+      <form id="form-register" novalidate onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label class="form-label">الاسم الكامل *</label>
+          <input type="text" class="form-control" id="reg-name" placeholder="مثال: خليل أحمد" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">اسم المتجر / الشركة</label>
+          <input type="text" class="form-control" id="reg-company" placeholder="مثال: متجر الهواتف">
+        </div>
+        <div class="form-group">
+          <label class="form-label">البريد الإلكتروني أو رقم الهاتف *</label>
+          <input type="text" class="form-control" id="reg-email" placeholder="khalil@example.com أو 059XXXXXXX" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">كلمة المرور (6 أحرف على الأقل) *</label>
+          <div style="position:relative;">
+            <input type="password" class="form-control" id="reg-pass" placeholder="كلمة المرور" style="padding-left:40px;" required>
+            <button type="button" onclick="togglePass('reg-pass')" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-3);">👁️</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">تأكيد كلمة المرور *</label>
+          <div style="position:relative;">
+            <input type="password" class="form-control" id="reg-pass2" placeholder="أعد كتابة كلمة المرور" style="padding-left:40px;" required>
+            <button type="button" onclick="togglePass('reg-pass2')" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-3);">👁️</button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-navy" style="width:100%;padding:13px;font-weight:800;font-size:1rem;">✅ إنشاء الحساب والبدء</button>
+      </form>
+      <div class="auth-toggle-link">لديك حساب بالفعل؟ <a onclick="showAuthBox('login')">تسجيل الدخول</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 2. MAIN APP SHELL ================= -->
+<div class="app-shell" id="screen-app" style="display:none;">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="assets/img/logo.jpg" alt="Logo">
+      <div class="sidebar-logo-text">
+        <div class="name">KHALIL</div>
+        <div class="sub">ACCOUNTING</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="javascript:void(0)" class="nav-item active" data-view="dashboard" onclick="switchView('dashboard')"><span class="nav-icon">📊</span> لوحة التحكم</a>
+      <a href="javascript:void(0)" class="nav-item" data-view="invoices"  onclick="switchView('invoices')"><span class="nav-icon">🧾</span> الفواتير</a>
+      <a href="javascript:void(0)" class="nav-item" data-view="customers" onclick="switchView('customers')"><span class="nav-icon">👥</span> الزبائن</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar js-user-initials">خ</div>
+        <div class="sidebar-user-info">
+          <div class="user-name js-user-name">مستخدم</div>
+          <div class="user-role js-user-role">مدير</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-right">
+        <button class="menu-toggle" id="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
+        <div class="topbar-title">
+          <h2 id="topbar-page-title">لوحة التحكم</h2>
+          <p><span id="topbar-greeting">مرحباً</span> &bull; <span id="topbar-date"></span></p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="btn btn-ghost btn-sm" onclick="logout()">🚪 خروج</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- VIEW 1: DASHBOARD -->
+      <section class="app-view active" id="view-dashboard">
+        <div class="stats-grid" id="dash-stats"></div>
+
+        <div class="quick-actions">
+          <div class="qa-btn" onclick="openAddInvoiceModal()"><span class="qa-icon">🧾</span><span class="qa-label">+ فاتورة جديدة</span></div>
+          <div class="qa-btn" onclick="openAddCustomerModal()"><span class="qa-icon">👤</span><span class="qa-label">+ زبون جديد</span></div>
+          <div class="qa-btn" onclick="switchView('invoices')"><span class="qa-icon">📋</span><span class="qa-label">عرض جميع الفواتير</span></div>
+          <div class="qa-btn" onclick="switchView('customers')"><span class="qa-icon">👥</span><span class="qa-label">سجل الزبائن</span></div>
+        </div>
+
+        <div class="grid-2-1" style="gap:20px;">
+          <div class="card" style="padding:20px;">
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:14px;color:var(--text-2);">📈 حركة المبيعات الشهرية</h3>
+            <canvas id="dash-chart" style="width:100%!important;max-height:230px;"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>آخر العمليات</h3>
+              <a href="javascript:void(0)" onclick="switchView('invoices')" style="font-size:0.8rem;color:var(--navy);font-weight:700;">عرض الكل ←</a>
+            </div>
+            <div class="card-body" style="padding:0 20px;">
+              <div id="dash-activity-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: INVOICES -->
+      <section class="app-view" id="view-invoices">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h2 style="font-size:1.4rem;font-weight:900;color:var(--navy);">إدارة الفواتير</h2>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-ghost btn-sm" onclick="exportInvCSV()">📤 تصدير CSV</button>
+            <button class="btn btn-navy" onclick="openAddInvoiceModal()">+ فاتورة جديدة</button>
+          </div>
+        </div>
+
+        <div class="stats-grid" id="inv-stats"></div>
+
+        <div class="card" style="margin-top:0;">
+          <div class="card-header">
+            <h3>قائمة الفواتير</h3>
+            <div class="filter-row">
+              <div class="search-bar" style="min-width:220px;">
+                <span>🔍</span>
+                <input type="text" id="inv-search" placeholder="بحث برقم الفاتورة، الزبون، أو الشريحة..." oninput="renderInvoices()">
+              </div>
+              <select class="form-control" id="inv-filter-status" onchange="renderInvoices()">
+                <option value="">كل الحالات</option>
+                <option>مدفوعة</option>
+                <option>غير مدفوعة</option>
+                <option>متأخرة</option>
+                <option>جزئية</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>رقم الفاتورة</th>
+                  <th>الزبون</th>
+                  <th>نوع / نظام الشريحة</th>
+                  <th>سري نمبر</th>
+                  <th>رقم الشريحة</th>
+                  <th>التاريخ</th>
+                  <th>المبلغ</th>
+                  <th>الحالة</th>
+                  <th>إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="inv-tbody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state hidden" id="inv-empty">
+            <div class="empty-state-icon">🧾</div>
+            <h3>لا توجد فواتير مسجلة بعد</h3>
+            <p>اضغط "+ فاتورة جديدة" لإنشاء أول فاتورة</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: CUSTOMERS -->
+      <section class="app-view" id="view-customers">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h2 style="font-size:1.4rem;font-weight:900;color:var(--navy);">إدارة الزبائن</h2>
+          <button class="btn btn-navy" onclick="openAddCustomerModal()">+ زبون جديد</button>
+        </div>
+
+        <div class="stats-grid" id="cust-stats"></div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>قائمة الزبائن</h3>
+            <div class="search-bar" style="min-width:220px;">
+              <span>🔍</span>
+              <input type="text" id="cust-search" placeholder="بحث بالاسم أو الهاتف أو المكان..." oninput="renderCustomers()">
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>الاسم</th>
+                  <th>رقم الهاتف</th>
+                  <th>المكان</th>
+                  <th>إجمالي الفواتير</th>
+                  <th>الإجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="cust-tbody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state hidden" id="cust-empty">
+            <div class="empty-state-icon">👥</div>
+            <h3>لا يوجد زبائن مسجلين بعد</h3>
+            <p>اضغط "+ زبون جديد" لإضافة أول زبون</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- Bottom Nav (Mobile) -->
+<nav class="bottom-nav no-print" id="bottom-nav" style="display:none;">
+  <div class="bottom-nav-items">
+    <a href="javascript:void(0)" class="bottom-nav-item active" data-view="dashboard" onclick="switchView('dashboard')"><span class="nav-icon">📊</span>لوحة</a>
+    <a href="javascript:void(0)" class="bottom-nav-item" data-view="invoices"  onclick="switchView('invoices')"><span class="nav-icon">🧾</span>فواتير</a>
+    <a href="javascript:void(0)" class="bottom-nav-item" data-view="customers" onclick="switchView('customers')"><span class="nav-icon">👥</span>زبائن</a>
+  </div>
+</nav>
+
+<!-- ================= 3. MODALS ================= -->
+
+<!-- Invoice Add/Edit Modal -->
+<div class="modal-overlay" id="modal-invoice">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header">
+      <h3 id="modal-inv-title">فاتورة جديدة</h3>
+      <div class="modal-close" onclick="closeModal('modal-invoice')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label">الزبون *</label>
+          <select class="form-control" id="inv-customer"><option value="">اختر الزبون</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">التاريخ</label>
+          <input type="date" class="form-control" id="inv-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">تاريخ الاستحقاق</label>
+          <input type="date" class="form-control" id="inv-due">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label">الحالة</label>
+          <select class="form-control" id="inv-status">
+            <option>غير مدفوعة</option>
+            <option>مدفوعة</option>
+            <option>جزئية</option>
+            <option>متأخرة</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">🔐 سري نمبر الشريحة</label>
+          <input type="text" class="form-control" id="inv-serial" placeholder="مثال: 899720" style="letter-spacing:1.5px;font-weight:700;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">📱 رقم الشريحة المختارة</label>
+          <input type="text" class="form-control" id="inv-simno" placeholder="مثال: 059XXXXXXX" style="font-weight:700;">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div class="form-group">
+          <label class="form-label">📶 نوع الشريحة</label>
+          <div style="display:flex;gap:0;border-radius:10px;overflow:hidden;border:1.5px solid var(--border);">
+            <button type="button" id="btn-simkind-sim" onclick="setSimKind('SIM')"
+              style="flex:1;padding:11px;font-family:inherit;font-size:0.95rem;font-weight:800;border:none;cursor:pointer;background:var(--navy);color:#fff;transition:all 0.2s;">
+              📱 SIM
+            </button>
+            <button type="button" id="btn-simkind-esim" onclick="setSimKind('E-SIM')"
+              style="flex:1;padding:11px;font-family:inherit;font-size:0.95rem;font-weight:800;border:none;cursor:pointer;background:#f0f0f0;color:var(--text-3);transition:all 0.2s;">
+              ☁️ E-SIM
+            </button>
+          </div>
+          <input type="hidden" id="inv-simkind" value="SIM">
+        </div>
+        <div class="form-group">
+          <label class="form-label">🌐 نظام الشريحة</label>
+          <div style="display:flex;gap:0;border-radius:10px;overflow:hidden;border:1.5px solid var(--border);">
+            <button type="button" id="btn-type-esim" onclick="setSimType('سكاي')"
+              style="flex:1;padding:11px;font-family:inherit;font-size:0.95rem;font-weight:800;border:none;cursor:pointer;background:var(--navy);color:#fff;transition:all 0.2s;">
+              ☁️ سكاي
+            </button>
+            <button type="button" id="btn-type-sim" onclick="setSimType('ليان')"
+              style="flex:1;padding:11px;font-family:inherit;font-size:0.95rem;font-weight:800;border:none;cursor:pointer;background:#f0f0f0;color:var(--text-3);transition:all 0.2s;">
+              📱 ليان
+            </button>
+          </div>
+          <input type="hidden" id="inv-simtype" value="سكاي">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:4px;">
+        <div class="form-group">
+          <label class="form-label">💰 المبلغ (₪) *</label>
+          <input type="number" class="form-control" id="inv-price" placeholder="0.00" min="0" step="0.01" oninput="calcInvSummary()" style="font-size:1.2rem;font-weight:800;text-align:center;">
+        </div>
+      </div>
+
+      <div class="inv-summary" style="background:var(--bg);border-radius:var(--radius-sm);padding:14px;margin-top:12px;">
+        <div style="display:flex;justify-content:space-between;font-weight:800;font-size:1.1rem;color:var(--navy);">
+          <span>الإجمالي النهائي:</span>
+          <span id="inv-summary-total">₪ 0.00</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-invoice')">إلغاء</button>
+      <button class="btn btn-navy" onclick="saveInvoice()">💾 حفظ الفاتورة</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice View Details Modal -->
+<div class="modal-overlay" id="modal-inv-view">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 id="view-inv-title">تفاصيل الفاتورة</h3>
+      <div class="modal-close" onclick="closeModal('modal-inv-view')">✕</div>
+    </div>
+    <div class="modal-body" id="view-inv-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-inv-view')">إغلاق</button>
+      <button class="btn btn-navy" id="btn-print-inv">🖨️ طباعة الفاتورة</button>
+    </div>
+  </div>
+</div>
+
+<!-- Customer Add/Edit Modal -->
+<div class="modal-overlay" id="modal-customer">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <h3 id="modal-cust-title">زبون جديد</h3>
+      <div class="modal-close" onclick="closeModal('modal-customer')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;gap:14px;">
+        <div class="form-group">
+          <label class="form-label">اسم الزبون الكامل *</label>
+          <input type="text" class="form-control" id="cust-name" placeholder="اسم الزبون">
+        </div>
+        <div class="form-group">
+          <label class="form-label">رقم الهاتف (10 أرقام فقط)</label>
+          <input type="tel" class="form-control" id="cust-phone" placeholder="0591234567" maxlength="10"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)" style="letter-spacing:1px;font-size:1.1rem;font-weight:700;text-align:center;">
+          <small style="color:var(--text-3);font-size:0.75rem;">10 أرقام فقط بدون مسافات أو شرطات</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📍 المكان</label>
+          <select class="form-control" id="cust-location" style="font-size:1rem;font-weight:700;">
+            <option value="غزة">غزة</option>
+            <option value="خانيونس">خانيونس</option>
+            <option value="الوسطى">الوسطى</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-customer')">إلغاء</button>
+      <button class="btn btn-navy" onclick="saveCustomer()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Customer Statement Modal -->
+<div class="modal-overlay" id="modal-statement">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-header">
+      <h3 id="stmt-title">كشف حساب زبون</h3>
+      <div class="modal-close" onclick="closeModal('modal-statement')">✕</div>
+    </div>
+    <div class="modal-body" id="stmt-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-statement')">إغلاق</button>
+      <button class="btn btn-navy" onclick="printStatement()">🖨️ طباعة كشف الحساب</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal-overlay" id="modal-reset">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h3>🔑 إعادة تعيين كلمة المرور</h3>
+      <div class="modal-close" onclick="closeModal('modal-reset')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="reset-step active" id="reset-step1">
+        <p style="color:var(--text-3);font-size:0.88rem;margin-bottom:14px;">أدخل البريد الإلكتروني أو رقم الهاتف المرتبط بحسابك للبحث عنه.</p>
+        <div class="form-group">
+          <label class="form-label">البريد الإلكتروني / رقم الهاتف</label>
+          <input type="text" class="form-control" id="reset-email" placeholder="khalil@example.com أو 059XXXXXXX">
+          <span id="reset-err1" style="display:none;color:var(--red);font-size:0.8rem;margin-top:4px;">لم يتم العثور على حساب بهذا البريد</span>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+          <button class="btn btn-ghost" onclick="closeModal('modal-reset')">إلغاء</button>
+          <button class="btn btn-navy" onclick="verifyResetEmail()">بحث عن الحساب →</button>
+        </div>
+      </div>
+      <div class="reset-step" id="reset-step2">
+        <p style="color:var(--text-3);font-size:0.88rem;margin-bottom:14px;">تم العثور على الحساب: <strong id="reset-user-found" style="color:var(--navy);"></strong><br>أدخل كلمة المرور الجديدة:</p>
+        <div class="form-group">
+          <label class="form-label">كلمة المرور الجديدة</label>
+          <input type="password" class="form-control" id="reset-new-pass" placeholder="6 أحرف على الأقل">
+        </div>
+        <div class="form-group">
+          <label class="form-label">تأكيد كلمة المرور</label>
+          <input type="password" class="form-control" id="reset-confirm-pass" placeholder="أعد كتابة كلمة المرور">
+          <span id="reset-err2" style="display:none;color:var(--red);font-size:0.8rem;margin-top:4px;">كلمتا المرور غير متطابقتين أو أقل من 6 أحرف</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:16px;">
+          <button class="btn btn-ghost" onclick="goResetStep(1)">← رجوع</button>
+          <button class="btn btn-navy" onclick="saveNewPassword()">✅ حفظ كلمة المرور</button>
+        </div>
+      </div>
+      <div class="reset-step" id="reset-step3" style="text-align:center;padding:12px 0;">
+        <div style="font-size:3rem;margin-bottom:10px;">✅</div>
+        <h3 style="color:var(--green);margin-bottom:8px;">تم تغيير كلمة المرور بنجاح!</h3>
+        <p style="color:var(--text-3);font-size:0.9rem;margin-bottom:16px;">يمكنك الآن تسجيل الدخول بكلمة مرورك الجديدة.</p>
+        <button class="btn btn-navy" onclick="closeModal('modal-reset')">حسناً، سأسجل الدخول</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- ================= 4. SCRIPTS ================= -->
+<script src="app.js"></script>
+
+</body>
+</html>
