@@ -147,8 +147,8 @@ function renderLoginHint() {
   const hintEl = document.getElementById("login-users-hint");
   if (users.length > 0) {
     hintEl.style.display = "block";
-    hintEl.innerHTML = "👤 الحسابات المسجلة على هذا الجهاز:<br>" +
-      users.map(u => `<strong>${u.email}</strong> — ${u.name}`).join("<br>");
+    hintEl.innerHTML = "👤 الحسابات المسجلة:<br>" +
+      users.map(u => `<strong>${u.username || u.email}</strong> — ${u.name}`).join("<br>");
   } else {
     hintEl.style.display = "none";
   }
@@ -156,23 +156,28 @@ function renderLoginHint() {
 
 function handleLogin(e) {
   e.preventDefault();
-  const email = document.getElementById("login-email").value.trim();
-  const pass  = document.getElementById("login-pass").value;
+  const inputUser = document.getElementById("login-email").value.trim();
+  const pass      = document.getElementById("login-pass").value;
 
-  if (!email || !pass) { showToast("يرجى إدخال البريد الإلكتروني وكلمة المرور", "error"); return; }
+  if (!inputUser || !pass) { showToast("يرجى إدخال اسم المستخدم وكلمة المرور", "error"); return; }
 
-  const users   = getUsers();
-  const found   = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === pass);
-  const isAdmin = (email === "admin@khalil.com" || email === "admin") && pass === "123456";
+  const users = getUsers();
+  const found = users.find(u => 
+    ((u.username && u.username.toLowerCase() === inputUser.toLowerCase()) || 
+     (u.email && u.email.toLowerCase() === inputUser.toLowerCase())) && 
+    u.password === pass
+  );
+  const isAdmin = (inputUser.toLowerCase() === "admin@khalil.com" || inputUser.toLowerCase() === "admin") && pass === "123456";
 
-  if (!found && !isAdmin) { showToast("البريد الإلكتروني أو كلمة المرور غير صحيحة", "error"); return; }
+  if (!found && !isAdmin) { showToast("اسم المستخدم أو كلمة المرور غير صحيحة", "error"); return; }
 
-  const userName = found ? found.name    : "Admin";
-  const userComp = found ? found.company : "KHALIL ACCOUNTING";
-  const userRole = found ? found.role    : "مدير";
+  const userName = found ? (found.name || found.username) : "Admin";
+  const userComp = found ? (found.company || "KHALIL ACCOUNTING") : "KHALIL ACCOUNTING";
+  const userRole = found ? (found.role || "مدير") : "مدير";
+  const userKey  = found ? (found.username || found.email) : inputUser;
 
   sessionStorage.setItem("ka_auth",    "1");
-  sessionStorage.setItem("ka_email",   email);
+  sessionStorage.setItem("ka_email",   userKey);
   sessionStorage.setItem("ka_name",    userName);
   sessionStorage.setItem("ka_company", userComp);
   sessionStorage.setItem("ka_role",    userRole);
@@ -509,6 +514,29 @@ function saveInvoice() {
 
   const serial  = document.getElementById("inv-serial").value.trim();
   const simno   = document.getElementById("inv-simno").value.trim();
+
+  if (serial) {
+    if (!/^\d+$/.test(serial)) {
+      showToast("سري نمبر الشريحة يجب أن يحتوي على أرقام فقط", "error");
+      return;
+    }
+    if (serial.length < 15 || serial.length > 20) {
+      showToast("سري نمبر الشريحة يجب أن يكون بين 15 و 20 رقماً", "error");
+      return;
+    }
+  }
+
+  if (simno) {
+    if (!/^\d+$/.test(simno)) {
+      showToast("رقم الشريحة يجب أن يحتوي على أرقام فقط", "error");
+      return;
+    }
+    if (simno.length !== 10) {
+      showToast("رقم الشريحة يجب أن يتكون من 10 أرقام تماماً", "error");
+      return;
+    }
+  }
+
   const simkind = document.getElementById("inv-simkind").value || "SIM";
   const simtype = document.getElementById("inv-simtype").value || "سكاي";
 

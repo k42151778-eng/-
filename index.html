@@ -124,6 +124,7 @@
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
+        <a href="users.html" class="btn btn-ghost btn-sm" title="إدارة المستخدمين">🔐 إدارة المستخدمين</a>
         <button class="btn btn-ghost btn-sm" onclick="logout()">🚪 خروج</button>
       </div>
     </header>
@@ -304,11 +305,15 @@
         </div>
         <div class="form-group">
           <label class="form-label">🔐 سري نمبر الشريحة</label>
-          <input type="text" class="form-control" id="inv-serial" placeholder="مثال: 899720" style="letter-spacing:1.5px;font-weight:700;">
+          <input type="text" class="form-control" id="inv-serial" placeholder="15 إلى 20 رقماً" maxlength="20"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,20)" style="letter-spacing:1.5px;font-weight:700;">
+          <small style="color:var(--text-3);font-size:0.75rem;">من 15 إلى 20 رقماً فقط</small>
         </div>
         <div class="form-group">
           <label class="form-label">📱 رقم الشريحة المختارة</label>
-          <input type="text" class="form-control" id="inv-simno" placeholder="مثال: 059XXXXXXX" style="font-weight:700;">
+          <input type="text" class="form-control" id="inv-simno" placeholder="059XXXXXXX" maxlength="10"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)" style="font-weight:700;">
+          <small style="color:var(--text-3);font-size:0.75rem;">10 أرقام فقط</small>
         </div>
       </div>
 
@@ -375,7 +380,6 @@
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-inv-view')">إغلاق</button>
       <button class="btn btn-navy" id="btn-print-inv">🖨️ طباعة الفاتورة</button>
-      <button class="btn btn-navy" id="btn-download-inv-png" style="background:#2E8B6E;">🖼️ تحميل كصورة (PNG)</button>
     </div>
   </div>
 </div>
@@ -481,7 +485,6 @@
 <div id="toast-container" class="toast-container"></div>
 
 <!-- ================= 4. SCRIPTS ================= -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="app.js"></script>
 
 </body>
