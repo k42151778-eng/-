@@ -6,6 +6,7 @@
   <meta name="description" content="KHALIL ACCOUNTING — منظومة محاسبية متكاملة لإدارة الفواتير والزبائن والشرائح">
   <title>KHALIL ACCOUNTING</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -123,9 +124,9 @@
           <p><span id="topbar-greeting">مرحباً</span> &bull; <span id="topbar-date"></span></p>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <a href="users.html" class="btn btn-ghost btn-sm" title="إدارة المستخدمين">🔐 إدارة المستخدمين</a>
-        <button class="btn btn-ghost btn-sm" onclick="logout()">🚪 خروج</button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <a href="users.html" class="btn btn-ghost btn-sm" title="إدارة المستخدمين">🔐 <span class="btn-label">إدارة المستخدمين</span></a>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">🚪 <span class="btn-label">خروج</span></button>
       </div>
     </header>
 
@@ -207,6 +208,8 @@
               <tbody id="inv-tbody"></tbody>
             </table>
           </div>
+          <!-- Mobile cards container -->
+          <div id="inv-cards" class="inv-cards-list" style="display:none;"></div>
           <div class="empty-state hidden" id="inv-empty">
             <div class="empty-state-icon">🧾</div>
             <h3>لا توجد فواتير مسجلة بعد</h3>
@@ -278,7 +281,7 @@
       <div class="modal-close" onclick="closeModal('modal-invoice')">✕</div>
     </div>
     <div class="modal-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div class="modal-grid-3">
         <div class="form-group">
           <label class="form-label">الزبون *</label>
           <select class="form-control" id="inv-customer"><option value="">اختر الزبون</option></select>
@@ -293,7 +296,7 @@
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div class="modal-grid-3">
         <div class="form-group">
           <label class="form-label">الحالة</label>
           <select class="form-control" id="inv-status">
@@ -317,7 +320,7 @@
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="modal-grid-2">
         <div class="form-group">
           <label class="form-label">📶 نوع الشريحة</label>
           <div style="display:flex;gap:0;border-radius:10px;overflow:hidden;border:1.5px solid var(--border);">
@@ -379,6 +382,7 @@
     <div class="modal-body" id="view-inv-body"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-inv-view')">إغلاق</button>
+      <button class="btn btn-success" id="btn-png-inv">📸 حفظ PNG</button>
       <button class="btn btn-navy" id="btn-print-inv">🖨️ طباعة الفاتورة</button>
     </div>
   </div>
