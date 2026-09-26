@@ -1,4 +1,4 @@
-/* ========================================
+﻿/* ========================================
    KHALIL ACCOUNTING — Complete Stylesheet
    دمج: main.css + layout.css + inline styles
    ======================================== */
@@ -121,7 +121,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .card-footer { padding: 12px 20px; border-top: 1px solid var(--border); background: var(--bg); }
 
 /* ========== Stat Cards ========== */
-.stat-card { background: var(--bg-card); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); position: relative; overflow: hidden; transition: var(--transition); }
+.stat-card { background: var(--bg-card); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); position: relative; overflow: hidden; transition: var(--transition); min-width: 0; word-break: break-word; }
 .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
 .stat-card::before { content: ""; position: absolute; top: 0; right: 0; width: 4px; height: 100%; border-radius: 0 var(--radius) var(--radius) 0; }
 .stat-card.navy::before   { background: var(--navy); }
@@ -469,43 +469,60 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   .topbar { padding: 0 12px; height: 60px; }
   .topbar-title h2 { font-size: 1rem; }
   .topbar-title p  { display: none; }
-  /* Collapse topbar action buttons to icon-only */
   .topbar .btn-ghost.btn-sm { padding: 6px 8px; font-size: 0.78rem; gap: 4px; }
 
   /* Page */
   .page-content { padding: 12px; padding-bottom: 86px; }
 
-  /* Invoices / Customers view headers */
+  /* ── Invoices / Customers page headers ── */
   #view-invoices > div:first-child,
   #view-customers > div:first-child {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 10px;
+    margin-bottom: 12px !important;
+  }
+  #view-invoices > div:first-child h2,
+  #view-customers > div:first-child h2 {
+    font-size: 1.2rem !important;
   }
   #view-invoices > div:first-child > div,
   #view-customers > div:first-child > div {
     width: 100%;
-    justify-content: flex-end;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  #view-invoices > div:first-child > div .btn,
+  #view-customers > div:first-child > div .btn {
+    flex: 1;
+    justify-content: center;
+    min-width: 110px;
   }
 
-  /* Filter row inside card header */
+  /* ── Filter row inside card header ── */
   .card-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .filter-row  { width: 100%; flex-direction: column; }
+  .card-header h3 { font-size: 0.98rem; }
+  .filter-row  { width: 100%; flex-direction: column; gap: 8px; }
   .filter-row .search-bar,
   .filter-row .form-control { width: 100%; min-width: unset; }
+  .card-header .search-bar  { width: 100%; min-width: unset; }
 
-  /* Stats grid 2 cols */
+  /* ── Stats grid: 2 equal columns ── */
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .stat-card { padding: 14px 12px; }
-  .stat-card-value { font-size: 1.3rem; }
+  .stat-card-icon { width: 44px; height: 44px; font-size: 1.2rem; margin-bottom: 8px; }
+  .stat-card-label { font-size: 0.76rem; }
+  .stat-card-value { font-size: 1.2rem; }
 
-  /* Quick Actions 2 cols */
+  /* ── Quick Actions 2 cols ── */
   .quick-actions { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .qa-btn { padding: 14px 10px; }
   .qa-icon { font-size: 1.6rem; }
   .qa-label { font-size: 0.8rem; }
 
-  /* Modal full-screen on mobile */
+  /* ── Modal: bottom-sheet ── */
   .modal-overlay { padding: 0; align-items: flex-end; }
   .modal {
     max-width: 100% !important;
@@ -516,17 +533,16 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   .modal-header { padding: 14px 16px; }
   .modal-footer { padding: 12px 16px; }
 
-  /* Invoice modal grids collapse to 1 col */
+  /* Invoice modal grids → 1 col */
   .modal-grid-3,
   .modal-grid-2 { grid-template-columns: 1fr; }
 
-
-  /* Tables — horizontal scroll */
+  /* ── Tables: horizontal scroll ── */
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .table { min-width: 560px; }
   .table th, .table td { padding: 10px 12px; font-size: 0.8rem; }
 
-  /* Bottom nav */
+  /* ── Bottom nav ── */
   .bottom-nav { padding: 6px 0; }
   .bottom-nav-item { font-size: 0.6rem; padding: 4px 8px; }
   .bottom-nav-item .nav-icon { font-size: 1.1rem; }
