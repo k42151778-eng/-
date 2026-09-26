@@ -127,6 +127,7 @@ function checkAuth() {
     bottomNav.style.display  = "none";
     showAuthBox("login");
     renderLoginHint();
+    renderGoogleAccountsList();
   } else {
     screenAuth.style.display = "none";
     screenApp.style.display  = "flex";
@@ -172,7 +173,14 @@ function handleLogin(e) {
   );
   const isAdmin = (inputUser.toLowerCase() === "admin@khalil.com" || inputUser.toLowerCase() === "admin") && pass === "123456";
 
-  if (!found && !isAdmin) { showToast("اسم المستخدم أو كلمة المرور غير صحيحة", "error"); return; }
+  if (!found && !isAdmin) {
+    if (inputUser.toLowerCase().includes("@gmail.com")) {
+      showToast("لم يتم العثور على هذا الحساب، اضغط على زر 'المتابعة والتسجيل عبر Google' للدخول فوراً!", "warning");
+    } else {
+      showToast("اسم المستخدم أو كلمة المرور غير صحيحة", "error");
+    }
+    return;
+  }
 
   const userName = found ? (found.name || found.username) : "Admin";
   const userComp = found ? (found.company || "KHALIL ACCOUNTING") : "KHALIL ACCOUNTING";
@@ -203,11 +211,11 @@ function handleRegister(e) {
   if (pass !== pass2)  { showToast("كلمتا المرور غير متطابقتين", "error"); return; }
 
   const users = getUsers();
-  if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+  if (users.some(u => u.email.toLowerCase() === email.toLowerCase() || (u.username && u.username.toLowerCase() === email.toLowerCase()))) {
     showToast("هذا البريد أو الرقم مسجل بالفعل", "error"); return;
   }
 
-  users.push({ id: Date.now(), name, company, email, password: pass, role: "مدير", createdAt: new Date().toISOString() });
+  users.push({ id: Date.now(), username: email, name, company, email, password: pass, role: "مدير", createdAt: new Date().toISOString() });
   saveUsers(users);
 
   const cleanDB = {
@@ -231,6 +239,204 @@ function handleRegister(e) {
 function logout() {
   ["ka_auth","ka_email","ka_name","ka_company","ka_role"].forEach(k => sessionStorage.removeItem(k));
   checkAuth();
+}
+
+// ===================== Google / Gmail Auth =====================
+
+function getGoogleRecentAccounts() {
+  try {
+    return JSON.parse(localStorage.getItem("ka_google_accounts") || "[]");
+  } catch(e) {
+    return [];
+  }
+}
+
+function saveGoogleRecentAccount(acc) {
+  try {
+    let list = getGoogleRecentAccounts();
+    list = list.filter(a => a.email.toLowerCase() !== acc.email.toLowerCase());
+    list.unshift(acc);
+    if (list.length > 5) list = list.slice(0, 5);
+    localStorage.setItem("ka_google_accounts", JSON.stringify(list));
+  } catch(e) {}
+}
+
+function openGoogleAuthModal(mode = "login") {
+  const title = mode === "register" ? "إنشاء حساب جديد عبر Google (Gmail)" : "تسجيل الدخول باستخدام Google (Gmail)";
+  const titleEl = document.getElementById("google-modal-title");
+  if (titleEl) titleEl.textContent = title;
+
+  document.getElementById("g-email").value = "";
+  document.getElementById("g-name").value = "";
+  document.getElementById("g-company").value = "";
+
+  renderGoogleAccountsList();
+  openModal("modal-google-auth");
+  setTimeout(() => {
+    document.getElementById("g-email")?.focus();
+  }, 300);
+}
+
+function renderGoogleAccountsList() {
+  const container = document.getElementById("google-accounts-container");
+  const listWrapper = document.getElementById("google-accounts-list");
+  if (!container || !listWrapper) return;
+
+  const accounts = getGoogleRecentAccounts();
+  const users = getUsers();
+
+  const allAccountsMap = new Map();
+  accounts.forEach(a => {
+    if (a && a.email) allAccountsMap.set(a.email.toLowerCase(), a);
+  });
+
+  users.filter(u => (u.email && u.email.toLowerCase().includes("@gmail.com")) || u.provider === "google").forEach(u => {
+    if (!allAccountsMap.has(u.email.toLowerCase())) {
+      allAccountsMap.set(u.email.toLowerCase(), { email: u.email, name: u.name, company: u.company });
+    }
+  });
+
+  const allAccounts = Array.from(allAccountsMap.values());
+
+  if (allAccounts.length > 0) {
+    listWrapper.style.display = "block";
+    container.innerHTML = allAccounts.map(acc => {
+      const initial = (acc.name || acc.email || "G").charAt(0).toUpperCase();
+      const safeEmail = escapeHtml(acc.email);
+      const safeName = escapeHtml(acc.name || acc.email.split("@")[0]);
+      const safeCompany = escapeHtml(acc.company || "شركتي");
+      return `
+        <div class="google-account-item" onclick="loginOrRegisterWithGoogle('${safeEmail}', '${safeName}', '${safeCompany}')">
+          <div class="google-avatar">${initial}</div>
+          <div class="google-account-details">
+            <div class="google-account-name">${safeName}</div>
+            <div class="google-account-email">${safeEmail}</div>
+          </div>
+          <span style="font-size:0.78rem;color:var(--navy);font-weight:700;">دخول ↵</span>
+        </div>
+      `;
+    }).join("");
+  } else {
+    listWrapper.style.display = "none";
+  }
+}
+
+function handleGoogleFormSubmit(e) {
+  e.preventDefault();
+  const emailInput = document.getElementById("g-email");
+  const nameInput = document.getElementById("g-name");
+  const compInput = document.getElementById("g-company");
+
+  let email = emailInput ? emailInput.value.trim() : "";
+  let name = nameInput ? nameInput.value.trim() : "";
+  const company = compInput && compInput.value.trim() ? compInput.value.trim() : "شركتي";
+
+  if (!email) {
+    showToast("يرجى إدخال عنوان بريد Google (Gmail)", "error");
+    return;
+  }
+
+  loginOrRegisterWithGoogle(email, name, company);
+}
+
+function loginOrRegisterWithGoogle(email, name = "", company = "شركتي") {
+  email = (email || "").trim().toLowerCase();
+  if (!email) {
+    showToast("يرجى إدخال بريد Gmail صحيح", "error");
+    return;
+  }
+
+  // إذا أدخل المستخدم الاسم فقط بدون @ يتم إكمال نطاق جيميل تلقائياً
+  if (!email.includes("@")) {
+    email += "@gmail.com";
+  }
+
+  if (!name) {
+    const rawPart = email.split("@")[0].replace(/[._-]/g, " ");
+    name = rawPart.charAt(0).toUpperCase() + rawPart.slice(1);
+  }
+
+  const users = getUsers();
+  let found = users.find(u =>
+    (u.email && u.email.toLowerCase() === email) ||
+    (u.username && u.username.toLowerCase() === email)
+  );
+
+  if (!found) {
+    // حساب جديد -> تسجيل الحساب وإنشاء مساحة عمل مستقلة فوراً
+    const newUser = {
+      id: Date.now(),
+      name: name,
+      username: email,
+      company: company || "شركتي",
+      email: email,
+      password: "Google_Auth_" + Math.random().toString(36).slice(-6),
+      role: "مدير",
+      provider: "google",
+      createdAt: new Date().toISOString()
+    };
+    users.push(newUser);
+    saveUsers(users);
+
+    const cleanDB = {
+      user:     { name: newUser.name, role: "مدير", email: email },
+      company:  { name: newUser.company, currency: "₪", tax: 0 },
+      customers: [],
+      invoices:  []
+    };
+    localStorage.setItem("khalil_accounting_db_" + email, JSON.stringify(cleanDB));
+    showToast(`تم إنشاء حسابك وتسجيل الدخول عبر Google بنجاح! مرحباً ${name} 🎉`, "success");
+    found = newUser;
+  } else {
+    showToast(`مرحباً بك مجدداً ${found.name || name}! جاري فتح لوحة التحكم...`, "success");
+  }
+
+  // حفظ الحساب في قائمة حسابات Google السريعة على هذا المتصفح
+  saveGoogleRecentAccount({
+    email: email,
+    name: found.name || name,
+    company: found.company || company
+  });
+
+  // تسجيل الجلسة
+  sessionStorage.setItem("ka_auth",    "1");
+  sessionStorage.setItem("ka_email",   email);
+  sessionStorage.setItem("ka_name",    found.name || name);
+  sessionStorage.setItem("ka_company", found.company || company);
+  sessionStorage.setItem("ka_role",    found.role || "مدير");
+
+  closeModal("modal-google-auth");
+  setTimeout(() => checkAuth(), 400);
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+// معالج Google Identity Services في حال توفر Client ID
+function handleGoogleCredentialResponse(response) {
+  try {
+    const payload = parseJwt(response.credential);
+    if (payload && payload.email) {
+      loginOrRegisterWithGoogle(payload.email, payload.name, "شركتي");
+    }
+  } catch(e) {
+    console.error("Google Auth error:", e);
+  }
+}
+
+function parseJwt(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch(e) {
+    return null;
+  }
 }
 
 // ===================== Reset Password =====================
@@ -867,7 +1073,7 @@ function renderCustomerStats() {
 function renderCustomers() {
   const q    = document.getElementById("cust-search").value.toLowerCase();
   const list = (DB.customers || []).filter(c =>
-    !q || (c.name + (c.phone||"") + (c.location||"")).toLowerCase().includes(q)
+    !q || (c.name + (c.phone||"") + (c.location||"") + (c.email||"")).toLowerCase().includes(q)
   );
 
   const tbody = document.getElementById("cust-tbody");
@@ -881,7 +1087,10 @@ function renderCustomers() {
     return `
       <tr>
         <td>${idx + 1}</td>
-        <td><strong>${c.name}</strong></td>
+        <td>
+          <div style="font-weight:800;color:var(--navy);">${c.name}</div>
+          ${c.email ? `<div style="font-size:0.75rem;color:var(--text-3);direction:ltr;display:inline-block;">✉️ ${c.email}</div>` : ""}
+        </td>
         <td style="font-weight:700;letter-spacing:1px;">${c.phone || "-"}</td>
         <td><span class="badge badge-navy" style="font-weight:800;padding:4px 10px;">📍 ${c.location || "غزة"}</span></td>
         <td class="text-green" style="font-weight:800;">${fmtCurr(total)}</td>
@@ -902,6 +1111,7 @@ function openAddCustomerModal() {
   document.getElementById("cust-name").value     = "";
   document.getElementById("cust-phone").value    = "";
   document.getElementById("cust-location").value = "غزة";
+  if (document.getElementById("cust-email")) document.getElementById("cust-email").value = "";
   openModal("modal-customer");
 }
 
@@ -909,12 +1119,14 @@ function saveCustomer() {
   const name     = document.getElementById("cust-name").value.trim();
   const phone    = document.getElementById("cust-phone").value.trim();
   const location = document.getElementById("cust-location").value;
+  const emailEl  = document.getElementById("cust-email");
+  const email    = emailEl ? emailEl.value.trim() : "";
 
   if (!name) { showToast("يرجى إدخال اسم الزبون", "error"); return; }
   if (phone && phone.length !== 10) { showToast("رقم الهاتف يجب أن يكون 10 أرقام", "error"); return; }
 
   if (!DB.customers) DB.customers = [];
-  const cust = { id: editingCustomerId || genId(DB.customers), name, phone, location, balance: 0 };
+  const cust = { id: editingCustomerId || genId(DB.customers), name, phone, email, location, balance: 0 };
 
   if (editingCustomerId) {
     const idx = DB.customers.findIndex(c => c.id === editingCustomerId);
@@ -937,6 +1149,7 @@ function editCustomer(id) {
   document.getElementById("cust-name").value     = c.name;
   document.getElementById("cust-phone").value    = c.phone    || "";
   document.getElementById("cust-location").value = c.location || "غزة";
+  if (document.getElementById("cust-email")) document.getElementById("cust-email").value = c.email || "";
   openModal("modal-customer");
 }
 

@@ -430,6 +430,7 @@
 
     function renderStats() {
       const users = getUsersList();
+      const googleUsers = users.filter(u => u.provider === "google" || (u.email && u.email.toLowerCase().includes("@gmail.com"))).length;
       const grid = document.getElementById("stats-grid");
       grid.innerHTML = `
         <div class="stat-card navy">
@@ -438,9 +439,9 @@
           <div class="stat-card-value">${users.length}</div>
         </div>
         <div class="stat-card green">
-          <div class="stat-card-icon">✅</div>
-          <div class="stat-card-label">جاهزون للدخول في index</div>
-          <div class="stat-card-value text-green">${users.length}</div>
+          <div class="stat-card-icon">🌐</div>
+          <div class="stat-card-label">المسجلون عبر Google</div>
+          <div class="stat-card-value text-green">${googleUsers}</div>
         </div>
         <div class="stat-card gold">
           <div class="stat-card-icon">🔑</div>
@@ -475,12 +476,20 @@
 
       tbody.innerHTML = filtered.map((u, idx) => {
         const usernameDisplay = u.username || u.email || "-";
+        const isGoogle = u.provider === "google" || (u.email && u.email.toLowerCase().includes("@gmail.com"));
+        const passwordDisplay = isGoogle 
+          ? `<span style="color:#059669; font-weight:800; font-size:0.8rem; background:rgba(5,150,105,0.08); padding:3px 8px; border-radius:4px;">🌐 حساب Google (تلقائي)</span>`
+          : `<code style="background: rgba(27,42,74,0.08); padding: 3px 8px; border-radius: 4px; font-family: monospace; font-weight: 700;">${u.password || "-"}</code>`;
+
         return `
           <tr>
             <td>${idx + 1}</td>
-            <td><strong style="color: var(--navy); letter-spacing: 0.5px;">${usernameDisplay}</strong></td>
+            <td>
+              <strong style="color: var(--navy); letter-spacing: 0.5px;">${usernameDisplay}</strong>
+              ${isGoogle ? `<span style="background:rgba(66,133,244,0.12);color:#1a73e8;font-size:0.72rem;font-weight:800;padding:2px 7px;border-radius:12px;margin-right:6px;display:inline-block;">Google</span>` : ''}
+            </td>
             <td>${u.name || "-"}</td>
-            <td><code style="background: rgba(27,42,74,0.08); padding: 3px 8px; border-radius: 4px; font-family: monospace; font-weight: 700;">${u.password}</code></td>
+            <td>${passwordDisplay}</td>
             <td>${u.company || "شركتي"}</td>
             <td>${u.createdAt ? u.createdAt.split("T")[0] : "-"}</td>
             <td>
