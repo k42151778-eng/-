@@ -524,6 +524,7 @@ function renderDashboard() {
 
   const skyBal   = (DB.balances && DB.balances.sky  != null) ? DB.balances.sky  : 0;
   const layanBal  = (DB.balances && DB.balances.layan!= null) ? DB.balances.layan: 0;
+  const negCardStyle = "background:#fee2e2;border:2px solid #dc2626;";
 
   document.getElementById("dash-stats").innerHTML = `
     <div class="stat-card navy"><div class="stat-card-icon">🧾</div><div class="stat-card-label">إجمالي الفواتير</div><div class="stat-card-value">${invs.length}</div></div>
@@ -531,18 +532,18 @@ function renderDashboard() {
     <div class="stat-card gold"><div class="stat-card-icon">✅</div><div class="stat-card-label">المحصّل</div><div class="stat-card-value text-gold">${fmtCurr(paidSales)}</div></div>
     <div class="stat-card red"><div class="stat-card-icon">⏳</div><div class="stat-card-label">المتبقي</div><div class="stat-card-value text-red">${fmtCurr(unpaid)}</div></div>
     <div class="stat-card orange"><div class="stat-card-icon">👥</div><div class="stat-card-label">إجمالي الزبائن</div><div class="stat-card-value">${custs.length}</div></div>
-    <div class="stat-card sky clickable" onclick="openBalanceModal('sky')" title="اضغط لإضافة رصيد سكاي">
+    <div class="stat-card sky clickable" onclick="openBalanceModal('sky')" title="اضغط لإضافة رصيد سكاي" style="${skyBal < 0 ? negCardStyle : ""}">
       <div class="stat-card-icon">☁️</div>
       <div class="stat-card-label">سكاي</div>
-      <div class="stat-card-value" style="color:#0ea5e9;">${fmtCurr(skyBal)}</div>
-      <div class="balance-tag">رصيد ☁️</div>
+      <div class="stat-card-value" style="color:${skyBal < 0 ? "#dc2626" : "#0ea5e9"};">${fmtCurr(skyBal)}</div>
+      <div class="balance-tag">${skyBal < 0 ? "⚠️ رصيد سالب" : "رصيد ☁️"}</div>
       <button class="card-edit-btn" onclick="event.stopPropagation();openBalanceModal('sky')">✏️ تعديل</button>
     </div>
-    <div class="stat-card layan clickable" onclick="openBalanceModal('layan')" title="اضغط لإضافة رصيد ليان">
+    <div class="stat-card layan clickable" onclick="openBalanceModal('layan')" title="اضغط لإضافة رصيد ليان" style="${layanBal < 0 ? negCardStyle : ""}">
       <div class="stat-card-icon">📱</div>
       <div class="stat-card-label">ليان</div>
-      <div class="stat-card-value" style="color:#c07a00;">${fmtCurr(layanBal)}</div>
-      <div class="balance-tag">رصيد 📱</div>
+      <div class="stat-card-value" style="color:${layanBal < 0 ? "#dc2626" : "#c07a00"};">${fmtCurr(layanBal)}</div>
+      <div class="balance-tag">${layanBal < 0 ? "⚠️ رصيد سالب" : "رصيد 📱"}</div>
       <button class="card-edit-btn" onclick="event.stopPropagation();openBalanceModal('layan')">✏️ تعديل</button>
     </div>
   `;
@@ -775,6 +776,7 @@ function openAddInvoiceModal() {
   document.getElementById("inv-serial").value   = "";
   document.getElementById("inv-simno").value    = "";
   document.getElementById("inv-price").value    = "";
+  document.getElementById("inv-original-price").value = "";
   setSimKind("SIM");
   setSimType("سكاي");
   calcInvSummary();
@@ -816,6 +818,7 @@ function saveInvoice() {
 
   const simkind = document.getElementById("inv-simkind").value || "SIM";
   const simtype = document.getElementById("inv-simtype").value || "سكاي";
+  const originalPrice = parseFloat(document.getElementById("inv-original-price").value) || 0;
 
   if (!DB.invoices) DB.invoices = [];
   const newId = editingInvoiceId || genId(DB.invoices);
@@ -827,17 +830,24 @@ function saveInvoice() {
     date:       document.getElementById("inv-date").value,
     due:        document.getElementById("inv-due").value,
     status:     document.getElementById("inv-status").value,
-    serial, simno, simkind, simtype, price
+    serial, simno, simkind, simtype, price, originalPrice
   };
 
   if (editingInvoiceId) {
     const idx = DB.invoices.findIndex(i => i.id === editingInvoiceId);
+    // إرجاع الخصم القديم قبل تطبيق الخصم الجديد
+    const old = DB.invoices[idx];
+    if (old) adjustCompanyBalance(old.simtype, old.originalPrice || 0);
     DB.invoices[idx] = inv;
   } else {
     DB.invoices.push(inv);
   }
 
+  // خصم سعر المبلغ الاصلي من رصيد الشركة (سكاي / ليان)
+  adjustCompanyBalance(simtype, -originalPrice);
+
   saveDB();
+  if (typeof renderDashboard === "function") renderDashboard();
   renderInvoiceStats();
   renderInvoices();
   closeModal("modal-invoice");
@@ -858,6 +868,7 @@ function editInvoice(id) {
   document.getElementById("inv-serial").value   = inv.serial || "";
   document.getElementById("inv-simno").value    = inv.simno  || "";
   document.getElementById("inv-price").value    = inv.price  || "";
+  document.getElementById("inv-original-price").value = inv.originalPrice || "";
   setSimKind(inv.simkind || "SIM");
   setSimType(inv.simtype || "سكاي");
   calcInvSummary();
@@ -893,6 +904,9 @@ function viewInvoice(id) {
       ${inv.simno  ? `<div class="sim-info-box"><label>📱 رقم الشريحة</label><div class="val">${inv.simno}</div></div>` : ""}
     </div>
     <div style="background:var(--bg);border-radius:var(--radius-sm);padding:14px;">
+      ${inv.originalPrice ? `<div style="display:flex;justify-content:space-between;font-weight:700;font-size:1rem;color:var(--text-3);margin-bottom:8px;">
+        <span>سعر المبلغ الاصلي:</span><span>${fmtCurr(inv.originalPrice)}</span>
+      </div>` : ""}
       <div style="display:flex;justify-content:space-between;font-weight:800;font-size:1.15rem;color:var(--navy);">
         <span>إجمالي المبلغ:</span><span>${fmtCurr(inv.price)}</span>
       </div>
@@ -905,10 +919,22 @@ function viewInvoice(id) {
 
 function deleteInvoice(id) {
   confirmAction("هل أنت متأكد من حذف هذه الفاتورة؟", () => {
+    const inv = (DB.invoices || []).find(i => i.id === id);
+    // إرجاع سعر المبلغ الاصلي لرصيد الشركة
+    if (inv) adjustCompanyBalance(inv.simtype, inv.originalPrice || 0);
     DB.invoices = (DB.invoices || []).filter(i => i.id !== id);
     saveDB(); renderInvoiceStats(); renderInvoices();
+    if (typeof renderDashboard === "function") renderDashboard();
     showToast("تم حذف الفاتورة بنجاح", "success");
   });
+}
+
+// تعديل رصيد شركة سكاي / ليان حسب نظام الشريحة (delta سالب = خصم)
+function adjustCompanyBalance(simtype, delta) {
+  if (!delta) return;
+  if (!DB.balances) DB.balances = {};
+  const key = (simtype || "سكاي") === "ليان" ? "layan" : "sky";
+  DB.balances[key] = (DB.balances[key] || 0) + delta;
 }
 
 function printInvoice(id) {
