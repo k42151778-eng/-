@@ -133,6 +133,7 @@
       <a href="javascript:void(0)" class="nav-item active" data-view="dashboard" onclick="switchView('dashboard')"><span class="nav-icon">📊</span> لوحة التحكم</a>
       <a href="javascript:void(0)" class="nav-item" data-view="invoices"  onclick="switchView('invoices')"><span class="nav-icon">🧾</span> الفواتير</a>
       <a href="javascript:void(0)" class="nav-item" data-view="customers" onclick="switchView('customers')"><span class="nav-icon">👥</span> الزبائن</a>
+      <a href="javascript:void(0)" class="nav-item" data-view="sales" onclick="switchView('sales')"><span class="nav-icon">📈</span> حركة المبيعات الشهرية</a>
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-user">
@@ -175,11 +176,7 @@
           <div class="qa-btn" onclick="switchView('customers')"><span class="qa-icon">👥</span><span class="qa-label">سجل الزبائن</span></div>
         </div>
 
-        <div class="grid-2-1" style="gap:20px;">
-          <div class="card" style="padding:20px;">
-            <h3 style="font-size:1rem;font-weight:700;margin-bottom:14px;color:var(--text-2);">📈 حركة المبيعات الشهرية</h3>
-            <canvas id="dash-chart" style="width:100%!important;max-height:230px;"></canvas>
-          </div>
+        <div style="display:grid;grid-template-columns:1fr;gap:20px;">
           <div class="card">
             <div class="card-header">
               <h3>آخر العمليات</h3>
@@ -290,6 +287,16 @@
         </div>
       </section>
 
+      <!-- VIEW 4: MONTHLY SALES -->
+      <section class="app-view" id="view-sales">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h2 style="font-size:1.4rem;font-weight:900;color:var(--navy);">📈 حركة المبيعات الشهرية</h2>
+        </div>
+        <div class="card" style="padding:20px;">
+          <canvas id="dash-chart" style="width:100%!important;max-height:230px;"></canvas>
+        </div>
+      </section>
+
     </main>
   </div>
 </div>
@@ -300,6 +307,7 @@
     <a href="javascript:void(0)" class="bottom-nav-item active" data-view="dashboard" onclick="switchView('dashboard')"><span class="nav-icon">📊</span>لوحة</a>
     <a href="javascript:void(0)" class="bottom-nav-item" data-view="invoices"  onclick="switchView('invoices')"><span class="nav-icon">🧾</span>فواتير</a>
     <a href="javascript:void(0)" class="bottom-nav-item" data-view="customers" onclick="switchView('customers')"><span class="nav-icon">👥</span>زبائن</a>
+    <a href="javascript:void(0)" class="bottom-nav-item" data-view="sales" onclick="switchView('sales')"><span class="nav-icon">📈</span>المبيعات</a>
   </div>
 </nav>
 

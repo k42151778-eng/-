@@ -489,7 +489,7 @@ function switchView(viewName) {
   document.querySelectorAll(".bottom-nav-item").forEach(el =>
     el.classList.toggle("active", el.dataset.view === viewName));
 
-  const titles = { dashboard: "لوحة التحكم", invoices: "الفواتير", customers: "الزبائن" };
+  const titles = { dashboard: "لوحة التحكم", invoices: "الفواتير", customers: "الزبائن", sales: "حركة المبيعات الشهرية" };
   document.getElementById("topbar-page-title").textContent = titles[viewName] || "لوحة التحكم";
 
   document.getElementById("sidebar")?.classList.remove("open");
@@ -498,6 +498,7 @@ function switchView(viewName) {
   if (viewName === "dashboard") renderDashboard();
   if (viewName === "invoices")  { renderInvoiceStats(); renderInvoices(); fillCustomerSelect(); }
   if (viewName === "customers") { renderCustomerStats(); renderCustomers(); }
+  if (viewName === "sales")     drawMonthlyChart();
 }
 
 function updateAppUserInfo() {
