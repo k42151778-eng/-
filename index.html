@@ -121,12 +121,13 @@
 <!-- ================= 2. MAIN APP SHELL ================= -->
 <div class="app-shell" id="screen-app" style="display:none;">
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-logo">
-      <img src="assets/img/logo.jpg" alt="Logo">
+    <div class="sidebar-logo" onclick="openLogoModal()" title="انقر لتغيير الشعار" style="cursor:pointer;position:relative;">
+      <img id="sidebar-logo-img" src="assets/img/logo.jpg" alt="Logo">
       <div class="sidebar-logo-text">
         <div class="name">KHALIL</div>
         <div class="sub">ACCOUNTING</div>
       </div>
+      <div style="position:absolute;bottom:-2px;right:-2px;background:var(--gold);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;box-shadow:0 2px 6px rgba(0,0,0,0.3);" title="تغيير الشعار">✎</div>
     </div>
     <nav class="sidebar-nav">
       <a href="javascript:void(0)" class="nav-item active" data-view="dashboard" onclick="switchView('dashboard')"><span class="nav-icon">📊</span> لوحة التحكم</a>
@@ -256,7 +257,7 @@
           <button class="btn btn-navy" onclick="openAddCustomerModal()">+ زبون جديد</button>
         </div>
 
-        <div class="stats-grid" id="cust-stats"></div>
+        <div class="stats-grid stats-grid-3" id="cust-stats"></div>
 
         <div class="card">
           <div class="card-header">
@@ -577,8 +578,81 @@
   </div>
 </div>
 
+<!-- Logo Change Modal -->
+<div class="modal-overlay" id="modal-logo">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h3>🖼️ تغيير شعار الشركة</h3>
+      <div class="modal-close" onclick="closeModal('modal-logo')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="position:relative;display:inline-block;">
+          <img id="logo-preview" src="assets/img/logo.jpg" alt="معاينة الشعار"
+            style="width:120px;height:120px;object-fit:cover;border-radius:16px;border:3px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,0.12);">
+          <label for="logo-file-input" style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);background:var(--gold);color:#fff;border-radius:20px;padding:5px 14px;font-size:0.78rem;font-weight:800;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+            📁 اختر صورة
+          </label>
+        </div>
+        <input type="file" id="logo-file-input" accept="image/*" style="display:none;" onchange="previewLogo(event)">
+      </div>
+      <p style="text-align:center;color:var(--text-3);font-size:0.82rem;margin-bottom:14px;">
+        يدعم JPG، PNG، WEBP — الحد الأقصى 2 ميجابايت<br>
+        سيظهر الشعار في الفواتير والطباعة
+      </p>
+      <div id="logo-error" style="display:none;color:var(--red);font-size:0.82rem;text-align:center;margin-bottom:10px;background:rgba(239,68,68,0.1);border-radius:8px;padding:8px;"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn btn-ghost" onclick="resetLogo()" style="color:var(--red);">🗑️ إعادة الافتراضي</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-ghost" onclick="closeModal('modal-logo')">إلغاء</button>
+        <button class="btn btn-navy" onclick="saveLogo()">💾 حفظ الشعار</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Balance Add Modal (Sky / Layan) -->
+<div class="modal-overlay" id="modal-balance">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h3 id="modal-balance-title">💰 إضافة رصيد</h3>
+      <div class="modal-close" onclick="closeModal('modal-balance')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div style="text-align:center;margin-bottom:20px;">
+        <div id="modal-balance-icon" style="font-size:3rem;margin-bottom:8px;">☁️</div>
+        <div id="modal-balance-name" style="font-size:1.2rem;font-weight:900;color:var(--navy);margin-bottom:4px;"></div>
+        <div style="font-size:0.85rem;color:var(--text-3);">الرصيد الحالي: <strong id="modal-balance-current" style="color:var(--navy);"></strong></div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">💵 المبلغ المراد إضافته (₪)</label>
+        <input type="number" class="form-control" id="balance-amount" placeholder="0.00" min="0" step="0.01"
+          style="font-size:1.4rem;font-weight:800;text-align:center;padding:14px;" oninput="updateBalancePreview()">
+      </div>
+      <div id="balance-preview" style="display:none;background:var(--bg);border-radius:var(--radius-sm);padding:12px;text-align:center;margin-bottom:4px;">
+        <div style="font-size:0.82rem;color:var(--text-3);margin-bottom:4px;">الرصيد الجديد بعد الإضافة</div>
+        <div id="balance-preview-val" style="font-size:1.6rem;font-weight:900;color:var(--navy);"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="setBalanceOp('add')" id="btn-bal-add"
+          style="flex:1;padding:9px;font-weight:800;background:rgba(46,139,110,0.1);color:var(--green);">+ إضافة</button>
+        <button class="btn btn-ghost btn-sm" onclick="setBalanceOp('sub')" id="btn-bal-sub"
+          style="flex:1;padding:9px;font-weight:800;background:rgba(229,57,53,0.08);color:var(--red);">− خصم</button>
+        <button class="btn btn-ghost btn-sm" onclick="setBalanceOp('set')" id="btn-bal-set"
+          style="flex:1;padding:9px;font-weight:800;background:rgba(27,42,74,0.07);color:var(--navy);">= تعيين</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-balance')">إلغاء</button>
+      <button class="btn btn-navy" onclick="saveBalance()">💾 حفظ الرصيد</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Container -->
 <div id="toast-container" class="toast-container"></div>
+
 
 <!-- ================= 4. SCRIPTS ================= -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>

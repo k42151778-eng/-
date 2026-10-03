@@ -522,13 +522,31 @@ function renderDashboard() {
   const paidSales  = invs.filter(i => i.status === "مدفوعة").reduce((s, i) => s + (i.price || 0), 0);
   const unpaid     = totalSales - paidSales;
 
+  const skyBal   = (DB.balances && DB.balances.sky  != null) ? DB.balances.sky  : 0;
+  const layanBal  = (DB.balances && DB.balances.layan!= null) ? DB.balances.layan: 0;
+
   document.getElementById("dash-stats").innerHTML = `
     <div class="stat-card navy"><div class="stat-card-icon">🧾</div><div class="stat-card-label">إجمالي الفواتير</div><div class="stat-card-value">${invs.length}</div></div>
     <div class="stat-card green"><div class="stat-card-icon">💰</div><div class="stat-card-label">إجمالي المبيعات</div><div class="stat-card-value text-green">${fmtCurr(totalSales)}</div></div>
     <div class="stat-card gold"><div class="stat-card-icon">✅</div><div class="stat-card-label">المحصّل</div><div class="stat-card-value text-gold">${fmtCurr(paidSales)}</div></div>
     <div class="stat-card red"><div class="stat-card-icon">⏳</div><div class="stat-card-label">المتبقي</div><div class="stat-card-value text-red">${fmtCurr(unpaid)}</div></div>
     <div class="stat-card orange"><div class="stat-card-icon">👥</div><div class="stat-card-label">إجمالي الزبائن</div><div class="stat-card-value">${custs.length}</div></div>
+    <div class="stat-card sky clickable" onclick="openBalanceModal('sky')" title="اضغط لإضافة رصيد سكاي">
+      <div class="stat-card-icon">☁️</div>
+      <div class="stat-card-label">سكاي</div>
+      <div class="stat-card-value" style="color:#0ea5e9;">${fmtCurr(skyBal)}</div>
+      <div class="balance-tag">رصيد ☁️</div>
+      <button class="card-edit-btn" onclick="event.stopPropagation();openBalanceModal('sky')">✏️ تعديل</button>
+    </div>
+    <div class="stat-card layan clickable" onclick="openBalanceModal('layan')" title="اضغط لإضافة رصيد ليان">
+      <div class="stat-card-icon">📱</div>
+      <div class="stat-card-label">ليان</div>
+      <div class="stat-card-value" style="color:#c07a00;">${fmtCurr(layanBal)}</div>
+      <div class="balance-tag">رصيد 📱</div>
+      <button class="card-edit-btn" onclick="event.stopPropagation();openBalanceModal('layan')">✏️ تعديل</button>
+    </div>
   `;
+
 
   const listEl = document.getElementById("dash-activity-list");
   if (invs.length === 0) {
@@ -1212,11 +1230,105 @@ function viewStatement(id) {
 
 // تحويل الصورة إلى base64 لتعمل في نافذة الطباعة
 function getLogoBase64(callback) {
-  // نستخدم الصورة المدمجة مباشرة — لا حاجة لتحميل ملف أو canvas
+  // أولوية: الشعار المخصص المحفوظ في localStorage
+  const customLogo = localStorage.getItem('khalil_custom_logo');
+  if (customLogo) {
+    callback(customLogo);
+    return;
+  }
+  // الاحتياطي: الشعار المدمج في الكود
   if (typeof LOGO_B64 !== "undefined" && LOGO_B64) {
     callback(LOGO_B64);
   } else {
     callback(null);
+  }
+}
+
+// ======================================================
+// دوال إدارة شعار الشركة
+// ======================================================
+
+let _pendingLogoB64 = null; // الصورة المختارة قبل الحفظ
+
+function openLogoModal() {
+  _pendingLogoB64 = null;
+  const errEl = document.getElementById('logo-error');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  // إعادة حقل الملف لتجنّب تذكّر الاختيار القديم
+  const inp = document.getElementById('logo-file-input');
+  if (inp) inp.value = '';
+  // عرض الشعار الحالي في المعاينة
+  const preview = document.getElementById('logo-preview');
+  if (preview) {
+    const custom = localStorage.getItem('khalil_custom_logo');
+    preview.src = custom || 'assets/img/logo.jpg';
+  }
+  openModal('modal-logo');
+}
+
+function previewLogo(event) {
+  const file = event.target.files[0];
+  const errEl = document.getElementById('logo-error');
+  if (!file) return;
+
+  // فحص الحجم (2 MB)
+  if (file.size > 2 * 1024 * 1024) {
+    errEl.textContent = '⚠️ حجم الصورة يتجاوز 2 ميجابايت. اختر صورة أصغر.';
+    errEl.style.display = 'block';
+    return;
+  }
+  // فحص النوع
+  if (!file.type.startsWith('image/')) {
+    errEl.textContent = '⚠️ الملف المختار ليس صورة. اختر JPG أو PNG أو WEBP.';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    _pendingLogoB64 = e.target.result;
+    const preview = document.getElementById('logo-preview');
+    if (preview) preview.src = _pendingLogoB64;
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveLogo() {
+  if (!_pendingLogoB64) {
+    showToast('⚠️ لم تختر صورة جديدة', 'warning');
+    return;
+  }
+  localStorage.setItem('khalil_custom_logo', _pendingLogoB64);
+  // تحديث الشعار في الـ sidebar و auth screen
+  document.querySelectorAll('#sidebar-logo-img, #screen-auth .auth-left img').forEach(img => {
+    img.src = _pendingLogoB64;
+  });
+  _pendingLogoB64 = null;
+  closeModal('modal-logo');
+  showToast('✅ تم حفظ الشعار الجديد بنجاح', 'success');
+}
+
+function resetLogo() {
+  if (!confirm('هل تريد إعادة الشعار الافتراضي؟')) return;
+  localStorage.removeItem('khalil_custom_logo');
+  document.querySelectorAll('#sidebar-logo-img, #screen-auth .auth-left img').forEach(img => {
+    img.src = 'assets/img/logo.jpg';
+  });
+  const preview = document.getElementById('logo-preview');
+  if (preview) preview.src = 'assets/img/logo.jpg';
+  _pendingLogoB64 = null;
+  closeModal('modal-logo');
+  showToast('🔄 تم استعادة الشعار الافتراضي', 'info');
+}
+
+// تطبيق الشعار المخزون عند تحميل الصفحة
+function applyStoredLogo() {
+  const custom = localStorage.getItem('khalil_custom_logo');
+  if (custom) {
+    document.querySelectorAll('#sidebar-logo-img, #screen-auth .auth-left img').forEach(img => {
+      img.src = custom;
+    });
   }
 }
 
@@ -1384,9 +1496,102 @@ function printStatement() {
   });
 }
 
+// ===================== Balance (Sky / Layan) =====================
+
+let _balanceTarget = "sky"; // "sky" | "layan"
+let _balanceOp     = "add"; // "add" | "sub" | "set"
+
+function openBalanceModal(type) {
+  _balanceTarget = type;
+  _balanceOp     = "add";
+
+  const isSky  = type === "sky";
+  const label  = isSky ? "سكاي ☁️" : "ليان 📱";
+  const icon   = isSky ? "☁️" : "📱";
+  const curBal = ((DB.balances || {})[type] || 0);
+
+  document.getElementById("modal-balance-title").textContent = "💰 رصيد " + label;
+  document.getElementById("modal-balance-icon").textContent  = icon;
+  document.getElementById("modal-balance-name").textContent  = label;
+  document.getElementById("modal-balance-current").textContent = fmtCurr(curBal);
+  document.getElementById("balance-amount").value = "";
+  document.getElementById("balance-preview").style.display = "none";
+
+  // highlight add button
+  _highlightBalOp("add");
+
+  openModal("modal-balance");
+  setTimeout(() => document.getElementById("balance-amount").focus(), 200);
+}
+
+function setBalanceOp(op) {
+  _balanceOp = op;
+  _highlightBalOp(op);
+  updateBalancePreview();
+}
+
+function _highlightBalOp(op) {
+  const styles = {
+    add: { bg:"rgba(46,139,110,0.18)", color:"var(--green)" },
+    sub: { bg:"rgba(229,57,53,0.14)",  color:"var(--red)"   },
+    set: { bg:"rgba(27,42,74,0.12)",   color:"var(--navy)"  }
+  };
+  ["add","sub","set"].forEach(o => {
+    const btn = document.getElementById("btn-bal-" + o);
+    if (!btn) return;
+    const active = (o === op);
+    btn.style.background = active ? styles[o].bg : "rgba(0,0,0,0.04)";
+    btn.style.color       = active ? styles[o].color : "var(--text-3)";
+    btn.style.fontWeight  = active ? "900" : "700";
+    btn.style.boxShadow   = active ? "0 0 0 2px currentColor" : "none";
+  });
+}
+
+function updateBalancePreview() {
+  const curBal = ((DB.balances || {})[_balanceTarget] || 0);
+  const amount = parseFloat(document.getElementById("balance-amount").value) || 0;
+  const preview = document.getElementById("balance-preview");
+  const previewVal = document.getElementById("balance-preview-val");
+
+  if (!amount) { preview.style.display = "none"; return; }
+
+  let newBal = curBal;
+  if      (_balanceOp === "add") newBal = curBal + amount;
+  else if (_balanceOp === "sub") newBal = Math.max(0, curBal - amount);
+  else if (_balanceOp === "set") newBal = amount;
+
+  previewVal.textContent = fmtCurr(newBal);
+  previewVal.style.color = newBal >= curBal ? "var(--green)" : "var(--red)";
+  preview.style.display  = "block";
+}
+
+function saveBalance() {
+  const amount = parseFloat(document.getElementById("balance-amount").value);
+  if (isNaN(amount) || amount < 0) {
+    showToast("يرجى إدخال مبلغ صحيح", "error"); return;
+  }
+  if (!DB.balances) DB.balances = {};
+
+  const curBal = DB.balances[_balanceTarget] || 0;
+  let newBal   = curBal;
+  if      (_balanceOp === "add") newBal = curBal + amount;
+  else if (_balanceOp === "sub") newBal = Math.max(0, curBal - amount);
+  else if (_balanceOp === "set") newBal = amount;
+
+  DB.balances[_balanceTarget] = newBal;
+  saveDB();
+  renderDashboard();
+  closeModal("modal-balance");
+
+  const label = _balanceTarget === "sky" ? "سكاي ☁️" : "ليان 📱";
+  showToast(`✅ تم تحديث رصيد ${label}: ${fmtCurr(newBal)}`, "success");
+}
+
 // ===================== Init =====================
 
+
 window.addEventListener("DOMContentLoaded", () => {
+  applyStoredLogo();
   checkAuth();
 });
 
